@@ -25,6 +25,9 @@ const App = () => {
 
   // Auto-advance videos every 5 seconds
   useEffect(() => {
+
+
+
     const interval = setInterval(() => {
       setCurrentVideoIndex((prevIndex) =>
         prevIndex === heroVideos.length - 1 ? 0 : prevIndex + 1
@@ -33,6 +36,50 @@ const App = () => {
 
     return () => clearInterval(interval);
   }, [heroVideos.length]);
+useEffect(() => {
+    const initializeBotpress = () => {
+        if (!window.botpress) return false;
+
+        console.log("Initializing Botpress events");
+
+        // Wait for webchat to be fully ready
+        window.botpress.on('webchat:ready', () => {
+            console.log("Webchat ready, waiting to send event...");
+            
+            // Delay to ensure everything is loaded
+            setTimeout(() => {
+                console.log("Sending custom event");
+                window.botpress.sendEvent({
+                    type: "proactive-trigger",
+                    payload: {
+                        message: "Hello from website!",
+                        timestamp: new Date().toISOString(),
+                        source: "react-app"
+                    }
+                }).then(() => {
+                    console.log("Custom event sent successfully");
+                }).catch((error) => {
+                    console.error("Failed to send event:", error);
+                });
+            }, 1000); // 1 second delay
+        });
+
+        return true;
+    };
+
+    // Check if Botpress is already loaded
+    if (window.botpress) {
+        initializeBotpress();
+    } else {
+        // Listen for Botpress to be loaded
+        document.addEventListener('bp-loaded', initializeBotpress);
+        
+        return () => {
+            document.removeEventListener('bp-loaded', initializeBotpress);
+        };
+    }
+}, []);
+
 
   const nextVideo = () => {
     setCurrentVideoIndex((prevIndex) =>
@@ -130,9 +177,8 @@ const App = () => {
           {heroVideos.map((video, index) => (
             <video
               key={index}
-              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
-                index === currentVideoIndex ? "opacity-100" : "opacity-0"
-              }`}
+              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${index === currentVideoIndex ? "opacity-100" : "opacity-0"
+                }`}
               autoPlay
               muted
               loop
